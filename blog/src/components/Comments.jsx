@@ -279,6 +279,27 @@ export default function Comments({ postId }) {
     }
   };
 
+  // const deleteComment = async (commentId) => {
+  //   try {
+  //     const response = await fetch("/api/deletecomment", {
+  //       method: "DELETE",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ commentId }),
+  //     });
+
+  //     if (response.ok) {
+  //       setComments((prevComments) =>
+  //         prevComments.filter((comment) => comment.id !== commentId)
+  //       );
+  //     } else {
+  //       console.error("Failed to delete comment");
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to delete comment", error);
+  //   }
+  // };
   const deleteComment = async (commentId) => {
     try {
       const response = await fetch("/api/deletecomment", {
@@ -288,11 +309,9 @@ export default function Comments({ postId }) {
         },
         body: JSON.stringify({ commentId }),
       });
-
+  
       if (response.ok) {
-        setComments((prevComments) =>
-          prevComments.filter((comment) => comment.id !== commentId)
-        );
+        setComments((prevComments) => removeComment(prevComments, commentId));
       } else {
         console.error("Failed to delete comment");
       }
@@ -300,24 +319,63 @@ export default function Comments({ postId }) {
       console.error("Failed to delete comment", error);
     }
   };
+  
+  // Helper function to recursively remove a comment or reply
+  const removeComment = (comments, commentId) => {
+    return comments
+      .map((comment) => {
+        if (comment.id === commentId) {
+          return null; // Remove the comment
+        }
+        if (comment.replies?.length) {
+          return {
+            ...comment,
+            replies: removeComment(comment.replies, commentId),
+          };
+        }
+        return comment;
+      })
+      .filter(Boolean); // Filter out null values
+  };  
+
+  // const editComment = async (commentId, content) => {
+  //   try {
+  //     const response = await fetch("/api/editcomments", {
+  //       method: "PATCH",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ commentId, content }),
+  //     });
+
+  //     if (response.ok) {
+  //       await response.json();
+  //       setComments((prevComments) =>
+  //         prevComments.map((comment) =>
+  //           comment.id === commentId ? { ...comment, content } : comment
+  //         )
+  //       );
+  //     } else {
+  //       console.error("Failed to update comment");
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to update comment", error);
+  //   }
+  // };
+
 
   const editComment = async (commentId, content) => {
     try {
-      const response = await fetch("/api/editcomment", {
+      const response = await fetch("/api/editcomments", {
         method: "PATCH",
         headers: {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({ commentId, content }),
       });
-
+  
       if (response.ok) {
-        await response.json();
-        setComments((prevComments) =>
-          prevComments.map((comment) =>
-            comment.id === commentId ? { ...comment, content } : comment
-          )
-        );
+        setComments((prevComments) => updateComment(prevComments, commentId, content));
       } else {
         console.error("Failed to update comment");
       }
@@ -325,6 +383,22 @@ export default function Comments({ postId }) {
       console.error("Failed to update comment", error);
     }
   };
+  
+  // Helper function to recursively update a comment or reply
+  const updateComment = (comments, commentId, content) => {
+    return comments.map((comment) => {
+      if (comment.id === commentId) {
+        return { ...comment, content }; // Update the comment content
+      }
+      if (comment.replies?.length) {
+        return {
+          ...comment,
+          replies: updateComment(comment.replies, commentId, content),
+        };
+      }
+      return comment;
+    });
+  };  
 
   const handleSubmitComment = async (content) => {
     try {
