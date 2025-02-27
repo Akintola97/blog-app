@@ -300,6 +300,85 @@ export default function Comments({ postId }) {
   //     console.error("Failed to delete comment", error);
   //   }
   // };
+  // const deleteComment = async (commentId) => {
+  //   try {
+  //     const response = await fetch("/api/deletecomment", {
+  //       method: "DELETE",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ commentId }),
+  //     });
+  
+  //     if (response.ok) {
+  //       setComments((prevComments) => removeComment(prevComments, commentId));
+  //     } else {
+  //       console.error("Failed to delete comment");
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to delete comment", error);
+  //   }
+  // };
+  
+  // // Helper function to recursively remove a comment or reply
+  // const removeComment = (comments, commentId) => {
+  //   return comments
+  //     .map((comment) => {
+  //       if (comment.id === commentId) {
+  //         return null; // Remove the comment
+  //       }
+  //       if (comment.replies?.length) {
+  //         return {
+  //           ...comment,
+  //           replies: removeComment(comment.replies, commentId),
+  //         };
+  //       }
+  //       return comment;
+  //     })
+  //     .filter(Boolean); // Filter out null values
+  // };  
+
+
+  // const deleteComment = async (commentId) => {
+  //   try {
+  //     const response = await fetch("/api/deletecomment", {
+  //       method: "DELETE",
+  //       headers: {
+  //         "Content-Type": "application/json",
+  //       },
+  //       body: JSON.stringify({ commentId }),
+  //     });
+  
+  //     if (response.ok) {
+  //       // Update the parent comment to show the "deleted" message without removing the child comments
+  //       setComments((prevComments) => updateDeletedComment(prevComments, commentId));
+  //     } else {
+  //       console.error("Failed to delete comment");
+  //     }
+  //   } catch (error) {
+  //     console.error("Failed to delete comment", error);
+  //   }
+  // };
+  
+  // // Helper function to recursively update the deleted comment in the state
+  // const updateDeletedComment = (comments, commentId) => {
+  //   return comments.map((comment) => {
+  //     if (comment.id === commentId) {
+  //       return {
+  //         ...comment,
+  //         content: "This comment has been deleted", // Change content to indicate deletion
+  //       };
+  //     }
+  //     if (comment.replies?.length) {
+  //       return {
+  //         ...comment,
+  //         replies: updateDeletedComment(comment.replies, commentId), // Update replies recursively
+  //       };
+  //     }
+  //     return comment;
+  //   });
+  // };  
+
   const deleteComment = async (commentId) => {
     try {
       const response = await fetch("/api/deletecomment", {
@@ -311,7 +390,8 @@ export default function Comments({ postId }) {
       });
   
       if (response.ok) {
-        setComments((prevComments) => removeComment(prevComments, commentId));
+        // Update the state based on the comment's parent-child relationship
+        setComments((prevComments) => removeOrUpdateComment(prevComments, commentId));
       } else {
         console.error("Failed to delete comment");
       }
@@ -320,22 +400,41 @@ export default function Comments({ postId }) {
     }
   };
   
-  // Helper function to recursively remove a comment or reply
-  const removeComment = (comments, commentId) => {
+  // Helper function to recursively update or remove the comment from the state
+  const removeOrUpdateComment = (comments, commentId) => {
     return comments
       .map((comment) => {
+        // If it's the comment being deleted and has replies, update the content
         if (comment.id === commentId) {
-          return null; // Remove the comment
+          if (comment.replies && comment.replies.length > 0) {
+            // Parent comment with replies, mark it as deleted
+            return {
+              ...comment,
+              content: "This comment has been deleted",
+            };
+          } else {
+            // Parent comment without replies, remove it entirely
+            return null;
+          }
         }
+  
+        // If this comment has replies, recursively handle them
         if (comment.replies?.length) {
-          return {
-            ...comment,
-            replies: removeComment(comment.replies, commentId),
-          };
+          const updatedReplies = removeOrUpdateComment(comment.replies, commentId);
+          if (updatedReplies) {
+            return {
+              ...comment,
+              replies: updatedReplies,
+            };
+          } else {
+            // If all replies are removed (e.g., parent is deleted), remove the comment too
+            return null;
+          }
         }
+  
         return comment;
       })
-      .filter(Boolean); // Filter out null values
+      .filter(Boolean); // Filter out null values (deleted comments)
   };  
 
   // const editComment = async (commentId, content) => {
