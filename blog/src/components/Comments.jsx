@@ -204,15 +204,37 @@ export default function Comments({ postId }) {
   const [loading, setLoading] = useState(true); // Add loading state
 
   // Function to calculate the total number of comments, including replies
-  const calculateCommentCount = (commentsArray) => {
-    let count = commentsArray.length;
-    commentsArray.forEach((comment) => {
-      if (comment.replies && comment.replies.length > 0) {
-        count += comment.replies.length;
+  // const calculateCommentCount = (commentsArray) => {
+  //   let count = commentsArray.length;
+  //   commentsArray.forEach((comment) => {
+  //     if (comment.replies && comment.replies.length > 0) {
+  //       count += comment.replies.length;
+  //     }
+  //   });
+  //   return count;
+  // };
+  // Function to calculate the total number of comments, including all nested replies
+const calculateCommentCount = (commentsArray) => {
+  let count = commentsArray.length;
+
+  // Function to recursively count replies
+  const countReplies = (replies) => {
+    replies.forEach((reply) => {
+      count++;
+      if (reply.replies && reply.replies.length > 0) {
+        countReplies(reply.replies); // Recursively count nested replies
       }
     });
-    return count;
   };
+
+  commentsArray.forEach((comment) => {
+    if (comment.replies && comment.replies.length > 0) {
+      countReplies(comment.replies); // Count replies of each comment
+    }
+  });
+
+  return count;
+};
 
   useEffect(() => {
     async function loadComments() {
