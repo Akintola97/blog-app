@@ -30,7 +30,7 @@ const CommentSchema = new mongoose.Schema(
       type: Date,
       default: Date.now,
     },
-    updateAt: {
+    updatedAt: {
       type: Date,
       default: Date.now,
     },
@@ -58,7 +58,7 @@ CommentSchema.virtual("replies", {
 
 // Update the updateAt field before each save
 CommentSchema.pre("save", function (next) {
-  this.updateAt = Date.now();
+  this.updatedAt = Date.now();
   next();
 });
 
