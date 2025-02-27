@@ -336,11 +336,11 @@ export async function DELETE(request) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    // Mark the parent comment as deleted
+    // If the comment has replies, update the content to "This comment has been deleted"
     await Comment.updateOne(
       { id: commentId },
       {
-        content: "This comment has been deleted", // Modify content
+        content: "This comment has been deleted", // Ensure content is set
         isDeleted: true, // Mark as deleted
         updatedAt: Date.now(),
       }
