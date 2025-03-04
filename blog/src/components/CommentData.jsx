@@ -192,7 +192,7 @@ function CommentData({ comment, addReply, deleteComment, editComment }) {
         </div>
       </div>
 
-      {/* Collapsible Nested Replies (still show even if parent is deleted, unless you decide otherwise) */}
+      {/* Collapsible Nested Replies (still show if parent's deleted, unless you prefer otherwise) */}
       {areRepliesVisible && comment.replies?.length > 0 && (
         <div className="ml-4 md:ml-6">
           {comment.replies.map((reply) => (

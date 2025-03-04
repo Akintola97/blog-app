@@ -15,6 +15,7 @@ export async function DELETE(request) {
   }
 
   try {
+    // Find the comment by its 'id'
     const comment = await Comment.findOne({ id: commentId });
     if (!comment) {
       return NextResponse.json(
@@ -22,17 +23,21 @@ export async function DELETE(request) {
         { status: 404 }
       );
     }
+
+    // Already deleted?
     if (comment.isDeleted) {
       return NextResponse.json(
         { message: "Cannot delete a comment that has already been deleted" },
         { status: 400 }
       );
     }
+
+    // Ensure the user owns the comment
     if (comment.userId !== user.id) {
       return NextResponse.json({ message: "Forbidden" }, { status: 403 });
     }
 
-    // Instead of removing from DB, we "soft delete" by setting isDeleted = true
+    // Soft delete: set content + isDeleted
     await Comment.updateOne(
       { id: commentId },
       {
@@ -42,7 +47,6 @@ export async function DELETE(request) {
       }
     );
 
-    // Return some indication of success
     return NextResponse.json(
       { message: "Comment deleted successfully" },
       { status: 200 }
