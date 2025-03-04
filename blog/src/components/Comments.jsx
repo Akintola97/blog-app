@@ -6,12 +6,17 @@ import CommentForm from "./CommentForm";
 import CommentData from "./CommentData";
 
 export default function Comments({ postId }) {
+  // Store an array of comment objects
   const [comments, setComments] = useState([]);
+  // Track loading state for initial fetch
   const [loading, setLoading] = useState(true);
 
-  // Calculate total # of comments (including nested)
+  /**
+   * Calculates the total number of comments including nested replies
+   */
   const calculateCommentCount = (commentsArray) => {
     let count = commentsArray.length;
+
     const getNestedCount = (arr) => {
       let nestedCount = 0;
       arr.forEach((c) => {
@@ -22,11 +27,14 @@ export default function Comments({ postId }) {
       });
       return nestedCount;
     };
+
     count += getNestedCount(commentsArray);
     return count;
   };
 
-  // Load initial comments
+  /**
+   * Fetch comments on mount
+   */
   useEffect(() => {
     async function loadComments() {
       try {
@@ -47,7 +55,31 @@ export default function Comments({ postId }) {
     loadComments();
   }, [postId]);
 
-  // Add a reply
+  /**
+   * Recursively update the specified comment to reflect "deleted"
+   */
+  const markCommentAsDeleted = (commentList, targetId) => {
+    return commentList.map((comment) => {
+      if (comment.id === targetId) {
+        // Soft-delete: set isDeleted to true & content to "This comment has been deleted"
+        return {
+          ...comment,
+          content: "This comment has been deleted",
+          isDeleted: true,
+        };
+      } else if (comment.replies?.length) {
+        return {
+          ...comment,
+          replies: markCommentAsDeleted(comment.replies, targetId),
+        };
+      }
+      return comment;
+    });
+  };
+
+  /**
+   * Add a new reply to a parent comment
+   */
   const addReply = async (parentId, content) => {
     try {
       const response = await fetch("/api/postcomments", {
@@ -57,6 +89,7 @@ export default function Comments({ postId }) {
       });
       if (response.ok) {
         const newComment = await response.json();
+        // Insert the new reply in the correct place
         const updateReplies = (list, targetId, newData) => {
           return list.map((c) => {
             if (c.id === targetId) {
@@ -82,7 +115,10 @@ export default function Comments({ postId }) {
     }
   };
 
-  // Delete a comment (recursive removal)
+  /**
+   * "Soft delete" a comment: marks it as deleted in the backend,
+   * then updates local state to reflect the change
+   */
   const deleteComment = async (commentId) => {
     try {
       const response = await fetch("/api/deletecomment", {
@@ -91,20 +127,8 @@ export default function Comments({ postId }) {
         body: JSON.stringify({ commentId }),
       });
       if (response.ok) {
-        const removeCommentRecursively = (list, targetId) => {
-          return list
-            .filter((c) => c.id !== targetId)
-            .map((c) => {
-              if (c.replies?.length) {
-                return {
-                  ...c,
-                  replies: removeCommentRecursively(c.replies, targetId),
-                };
-              }
-              return c;
-            });
-        };
-        setComments((prev) => removeCommentRecursively(prev, commentId));
+        // Instead of removing from state, we just mark it as deleted
+        setComments((prev) => markCommentAsDeleted(prev, commentId));
       } else {
         console.error("Failed to delete comment");
       }
@@ -113,7 +137,9 @@ export default function Comments({ postId }) {
     }
   };
 
-  // Edit a comment
+  /**
+   * Edit a comment's content
+   */
   const editComment = async (commentId, content) => {
     try {
       const response = await fetch("/api/editcomment", {
@@ -123,6 +149,7 @@ export default function Comments({ postId }) {
       });
       if (response.ok) {
         await response.json();
+        // Recursively update the comment's content in state
         const updateComments = (list, targetId, newContent) => {
           return list.map((c) => {
             if (c.id === targetId) {
@@ -145,7 +172,9 @@ export default function Comments({ postId }) {
     }
   };
 
-  // Submit a new top-level comment
+  /**
+   * Post a new top-level comment
+   */
   const handleSubmitComment = async (content) => {
     try {
       const response = await fetch("/api/postcomments", {
@@ -164,11 +193,12 @@ export default function Comments({ postId }) {
     }
   };
 
+  // Calculate the total number of (nested) comments
   const commentCount = calculateCommentCount(comments);
 
   return (
     <div className="w-full mx-auto px-4 md:px-6 py-6 md:py-8 max-w-4xl">
-      {/* Use a subtle light background instead of pure white */}
+      {/* Use a subtle light background for light mode, dark for dark mode */}
       <div className="bg-gray-50 dark:bg-gray-900 p-4 md:p-6 rounded-lg shadow-md w-full">
         <h2 className="text-xl md:text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-4">
           Comments {commentCount > 0 && `(${commentCount})`}
@@ -177,7 +207,7 @@ export default function Comments({ postId }) {
         {/* Form for adding new top-level comments */}
         <CommentForm handleSubmitComment={handleSubmitComment} />
 
-        {/* Loading spinner */}
+        {/* Loading spinner while fetching comments */}
         {loading ? (
           <div className="flex justify-center my-6">
             <CircularProgress />
