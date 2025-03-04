@@ -1,4 +1,3 @@
-
 import dbConnect from "@/utils/mongodb";
 import Comment from "@/model/Comment";
 import User from "@/model/User";

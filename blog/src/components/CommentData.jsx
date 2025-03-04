@@ -101,7 +101,8 @@ function CommentData({ comment, addReply, deleteComment, editComment }) {
             {isDeleted ? (
               // Comment is deleted
               <p className="italic text-sm md:text-base text-gray-500 dark:text-gray-400 mt-3">
-                {comment.content} {/* Usually "This comment has been deleted" */}
+                {comment.content}{" "}
+                {/* Usually "This comment has been deleted" */}
               </p>
             ) : isEditing ? (
               // Editing form
