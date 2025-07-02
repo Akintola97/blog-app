@@ -1,5 +1,3 @@
-export const dynamic = "force-dynamic";
-
 import dbConnect from "@/utils/mongodb";
 import Comment from "@/model/Comment";
 import User from "@/model/User";
